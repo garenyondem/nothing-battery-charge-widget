@@ -1,0 +1,41 @@
+# Gradle
+.gradle/
+build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Kotlin
+.kotlin/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Local configuration and secrets
+local.properties
+keystore.properties
+*.jks
+*.keystore
+
+# Build artefacts
+*.apk
+*.aab
+*.ap_
+*.dex
+*.hprof
+
+# Crash and build logs
+*.log
+hs_err_pid*
+replay_pid*
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+*.swp

@@ -1,0 +1,90 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "AGENTS.md",
+    "DEPLOYMENT.md"
+  ],
+  "mcp": {
+    "playwright": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@playwright/mcp"
+      ],
+      "enabled": true,
+      "env": {
+        "BROWSER": "chromium"
+      }
+    },
+    "chrome-devtools": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--autoConnect"
+      ],
+      "enabled": true
+    },
+    "filesystem": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "C:/Projects",
+        "D:\\Projects"
+      ],
+      "enabled": true
+    },
+    "sequential-thinking": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "enabled": true
+    },
+    "web-search-tower": {
+      "type": "local",
+      "enabled": true,
+      "command": [
+        "node",
+        "D:\\my-mcp-servers\\web-search-mcp-v0.3.2\\dist\\index.js"
+      ]
+    },
+    "web-search-omen": {
+      "type": "local",
+      "enabled": true,
+      "command": [
+        "node",
+        "C:\\Projects\\mcp-servers\\web-search-mcp-v0.3.2\\dist\\index.js"
+      ]
+    }
+  },
+  "permission": {
+    "webfetch": "allow",
+    "websearch": "allow",
+    "question": "allow",
+    "todowrite": "allow",
+    "skill": "allow",
+    "edit": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "read": "allow",
+    "bash": {
+      "bun *": "allow",
+      "git diff": "allow",
+      "git status": "allow",
+      "git log *": "allow",
+      "git add *": "ask",
+      "git commit *": "ask",
+      "git push *": "ask",
+      "docker *": "allow",
+      "rm *": "ask",
+      "*": "ask"
+    }
+  }
+}
