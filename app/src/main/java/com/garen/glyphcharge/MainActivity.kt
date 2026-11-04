@@ -45,8 +45,19 @@ class MainActivity : Activity() {
         askNotificationPermission()
 
         if (ChargingPreferences.isEnabled(this)) {
-            runCatching { ChargingMonitorService.start(this) }
+            armMonitor()
         }
+    }
+
+    private fun armMonitor() {
+        val heartbeat = ChargingPreferences.heartbeat(this)
+        val age = System.currentTimeMillis() - heartbeat
+        if (heartbeat > 0 && age in 0..60_000) return
+
+        runCatching { ChargingMonitorService.start(this) }
+            .onFailure {
+                Toast.makeText(this, "Could not start the monitor", Toast.LENGTH_SHORT).show()
+            }
     }
 
     override fun onResume() {
@@ -120,10 +131,7 @@ class MainActivity : Activity() {
     private fun setMeterEnabled(enabled: Boolean) {
         ChargingPreferences.setEnabled(this, enabled)
         if (enabled) {
-            runCatching { ChargingMonitorService.start(this) }
-                .onFailure {
-                    Toast.makeText(this, "Could not start the monitor", Toast.LENGTH_SHORT).show()
-                }
+            armMonitor()
         } else {
             ChargingMonitorService.stop(this)
         }
@@ -133,7 +141,7 @@ class MainActivity : Activity() {
     private fun setOnlyFaceDown(enabled: Boolean) {
         ChargingPreferences.setOnlyFaceDown(this, enabled)
         if (ChargingPreferences.isEnabled(this)) {
-            runCatching { ChargingMonitorService.start(this) }
+            armMonitor()
         }
         updateStatus()
     }
@@ -241,12 +249,11 @@ class MainActivity : Activity() {
             return
         }
 
-        runCatching {
-            ChargingMonitorService.start(this)
-            MonitorWatchdog.schedule(this)
-        }.onFailure {
-            Toast.makeText(this, "Could not start the monitor", Toast.LENGTH_SHORT).show()
-        }
+        runCatching { ChargingMonitorService.start(this) }
+            .onFailure {
+                Toast.makeText(this, "Could not start the monitor", Toast.LENGTH_SHORT).show()
+            }
+        MonitorWatchdog.schedule(this)
         updateStatus()
     }
 

@@ -19,6 +19,13 @@ class ChargingMonitorService : Service() {
         private const val SAMPLE_INTERVAL_MS = 30_000L
         private const val TREND_INTERVAL_MS = 60_000L
 
+        @Volatile
+        private var serviceNotificationDismissed = false
+
+        fun onServiceNotificationDismissed() {
+            serviceNotificationDismissed = true
+        }
+
         fun start(context: Context) {
             context.startForegroundService(
                 Intent(context, ChargingMonitorService::class.java)
@@ -40,6 +47,7 @@ class ChargingMonitorService : Service() {
     private var lastTrend: Boolean? = null
     private var lastCharging = false
     private var lastLevel = -1
+    private var lastPlugged = false
     private var lastShown = false
     private var lastShownPercent = -1
     private var lastServiceStatus = ""
@@ -60,6 +68,7 @@ class ChargingMonitorService : Service() {
     override fun onCreate() {
         super.onCreate()
         ChargingNotification.ensureChannels(this)
+        serviceNotificationDismissed = false
         faceGate = FaceDownGate(this, handler) { state ->
             ChargingPreferences.setHeartbeat(this)
             Log.i(
@@ -130,6 +139,8 @@ class ChargingMonitorService : Service() {
 
         lastCharging = decision.charging
         lastLevel = raw.level
+        lastPlugged = raw.plugged
+
         updateLiveUpdate()
         faceGate.recheck()
     }
@@ -166,7 +177,8 @@ class ChargingMonitorService : Service() {
         onlyFaceDown: Boolean
     ) {
         val status = when {
-            !lastCharging -> "Waiting for charger"
+            !lastPlugged -> "Waiting for charger"
+            !lastCharging -> "Charger connected, not charging"
             !onlyFaceDown -> "Glyph on: always while charging"
             allowed -> "Glyph on: phone is face-down"
             else -> "Glyph paused: phone is face-up"
@@ -174,6 +186,10 @@ class ChargingMonitorService : Service() {
         if (status == lastServiceStatus) return
 
         lastServiceStatus = status
+        if (serviceNotificationDismissed) {
+            Log.i(TAG, "service notification stays hidden: $status")
+            return
+        }
         startForeground(
             ChargingNotification.SERVICE_NOTIFICATION_ID,
             ChargingNotification.buildService(this, status),

@@ -52,6 +52,10 @@
             android:exported="false" />
 
         <receiver
+            android:name=".ServiceNotificationDismissedReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".MonitorRestartReceiver"
             android:exported="false" />
     </application>

@@ -77,6 +77,14 @@ object ChargingNotification {
         status: String = "Watching the charger"
     ): Notification {
         ensureChannels(context)
+        val dismissIntent = PendingIntent.getBroadcast(
+            context,
+            1,
+            Intent(context, ServiceNotificationDismissedReceiver::class.java).apply {
+                action = ACTION_SERVICE_NOTIFICATION_DISMISSED
+            },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
         return Notification.Builder(context, SERVICE_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_glyph_charge)
             .setContentTitle("Charging meter")
@@ -85,6 +93,7 @@ object ChargingNotification {
             .setOnlyAlertOnce(true)
             .setSound(null)
             .setVibrate(null)
+            .setDeleteIntent(dismissIntent)
             .build()
     }
 
