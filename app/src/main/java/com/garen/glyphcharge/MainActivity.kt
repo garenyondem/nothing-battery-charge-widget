@@ -14,8 +14,10 @@ import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Switch
@@ -64,6 +66,16 @@ class MainActivity : Activity() {
             setPadding(dp(24), dp(32), dp(24), dp(24))
             gravity = Gravity.CENTER_HORIZONTAL
         }
+
+        root.addView(ImageView(this).apply {
+            setImageResource(R.drawable.ic_glyph_mark)
+            contentDescription = null
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            layoutParams = LinearLayout.LayoutParams(dp(64), dp(64)).apply {
+                topMargin = dp(12)
+                bottomMargin = dp(10)
+            }
+        })
 
         root.addView(TextView(this).apply {
             text = "Glyph Charge"

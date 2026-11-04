@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <path
+        android:fillColor="@color/glyph_mark"
+        android:pathData="M28.71,5.29a3.29,3.29 0 1,0 6.58,0a3.29,3.29 0 1,0 -6.58,0ZM42.07,8.87a3.29,3.29 0 1,0 6.58,0a3.29,3.29 0 1,0 -6.58,0ZM51.85,18.64a3.29,3.29 0 1,0 6.58,0a3.29,3.29 0 1,0 -6.58,0ZM55.42,32a3.29,3.29 0 1,0 6.58,0a3.29,3.29 0 1,0 -6.58,0ZM51.85,45.36a3.29,3.29 0 1,0 6.58,0a3.29,3.29 0 1,0 -6.58,0ZM42.07,55.13a3.29,3.29 0 1,0 6.58,0a3.29,3.29 0 1,0 -6.58,0ZM28.71,58.71a3.29,3.29 0 1,0 6.58,0a3.29,3.29 0 1,0 -6.58,0ZM15.36,55.13a3.29,3.29 0 1,0 6.58,0a3.29,3.29 0 1,0 -6.58,0ZM5.58,45.36a3.29,3.29 0 1,0 6.58,0a3.29,3.29 0 1,0 -6.58,0Z" />
+    <path
+        android:fillColor="@color/glyph_mark"
+        android:fillAlpha="0.3"
+        android:pathData="M2,32a3.29,3.29 0 1,0 6.58,0a3.29,3.29 0 1,0 -6.58,0ZM5.58,18.64a3.29,3.29 0 1,0 6.58,0a3.29,3.29 0 1,0 -6.58,0ZM15.36,8.87a3.29,3.29 0 1,0 6.58,0a3.29,3.29 0 1,0 -6.58,0Z" />
+    <path
+        android:fillColor="@color/glyph_mark"
+        android:pathData="M33.08,21.21 L22.29,34.16 L32,34.16 L30.92,42.79 L41.71,29.84 L32,29.84Z"
+        android:strokeColor="@color/glyph_mark"
+        android:strokeWidth="1.64"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

@@ -55,7 +55,7 @@ object ChargingNotification {
         )
 
         val notification = Notification.Builder(context, LIVE_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_charging)
+            .setSmallIcon(R.drawable.ic_stat_glyph_charge)
             .setContentTitle("Charging")
             .setContentText("$value% charged")
             .setContentIntent(contentIntent)
@@ -78,7 +78,7 @@ object ChargingNotification {
     ): Notification {
         ensureChannels(context)
         return Notification.Builder(context, SERVICE_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_charging)
+            .setSmallIcon(R.drawable.ic_stat_glyph_charge)
             .setContentTitle("Charging meter")
             .setContentText(status)
             .setOngoing(true)
