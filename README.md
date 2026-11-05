@@ -100,7 +100,7 @@ The meter is on by default. The app starts the meter when it opens.
 
 - **The Glyph stays dark.** Check the face-down position. Check notification permission. Check Glyph Progress in the Nothing Glyph app.
 - **The meter stops after a while.** Set Background access to Unrestricted. Then tap Restart monitor.
-- **The app shows OFFLINE.** Open the app. The app starts the meter again.
+- **The meter stopped.** Open the app. The app starts the meter again.
 - **The charger is connected, but the Glyph is off.** The app needs more than a connected cable. It waits for real charging signals.
 
 ## Good to know

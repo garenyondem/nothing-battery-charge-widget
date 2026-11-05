@@ -50,8 +50,6 @@ class MainActivity : Activity() {
     private lateinit var gauge: GlyphGaugeView
     private lateinit var levelLabel: TextView
     private lateinit var stateLabel: TextView
-    private lateinit var liveLabel: TextView
-    private lateinit var liveDot: View
     private lateinit var faceCell: StatusCell
     private lateinit var glyphCell: StatusCell
     private lateinit var notificationValue: TextView
@@ -191,12 +189,6 @@ class MainActivity : Activity() {
             NothingUi.micro(this, "GLYPH CHARGE"),
             LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         )
-        liveDot = NothingUi.dot(this, 5)
-        row.addView(liveDot)
-        liveLabel = NothingUi.micro(this, "OFFLINE").apply {
-            setPadding(dp(7), 0, 0, 0)
-        }
-        row.addView(liveLabel)
         return row
     }
 
@@ -540,9 +532,6 @@ class MainActivity : Activity() {
                 else -> "NOT CHARGING"
             }
         )
-
-        liveLabel.setTextIfChanged(if (live) "LIVE" else "OFFLINE")
-        NothingUi.tintDot(liveDot, if (live) GlyphTokens.ink(this) else GlyphTokens.inkFaint(this))
 
         faceCell.value.setTextIfChanged(
             when {
