@@ -1,6 +1,7 @@
 package com.garen.glyphcharge
 
 import android.os.BatteryManager
+import java.util.Locale
 
 data class ChargingDecision(
     val charging: Boolean,
@@ -73,7 +74,14 @@ object ChargingDetector {
         return ChargingDecision(
             charging = ratio >= THRESHOLD,
             ratio = ratio,
-            detail = "score=$score total=$total ratio=$ratio [$detail]"
+            detail = String.format(
+                Locale.US,
+                "score=%.2f total=%.2f ratio=%.2f [%s]",
+                score,
+                total,
+                ratio,
+                detail.toString().trim()
+            )
         )
     }
 }

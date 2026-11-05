@@ -7,6 +7,15 @@
 - No Compose, AndroidX, WorkManager or Nothing GDK. Platform APIs only. `minSdk 36`, `targetSdk 36`, `compileSdk 37`.
 - Test device: Nothing Phone (3a) Pro `A059P`, Nothing OS 5.0 / Android 17. Also targets Nothing OS 4.1 / Android 16.
 
+## UI
+
+- The screen follows Nothing OS 5.0. It is monochrome, uses the device typefaces, and moves in short ease-out steps. `docs/DESIGN.md` has the tokens and rules. `docs/research/2026-ui-landscape.md` has the platform and library research.
+- `ui/GlyphTokens.kt` holds colors, type, spacing and easing. `ui/GlyphGaugeView.kt` draws the twelve-dot ring. `ui/NothingSwitch.kt` is the toggle. `ui/NothingUi.kt` builds labels, rows, sections and status cells.
+- The app requests `sans-serif`, `geist-mono` and fixed Geist weights from the system. Nothing OS 5.0 maps `sans-serif` to Geist. No font files ship in the APK.
+- Do not use NDot55 for interface text. The brand rules reserve it for the logotype and product names.
+- No spring or bounce. No parallax. No dependency for the motion. `ValueAnimator` and `PathInterpolator` cover it.
+- The raw detector dump sits behind the `DETAILS` row. Keep it there; do not put it back on the main screen.
+
 ## Build
 
 - There is no `java` on PATH. Set `JAVA_HOME` to Android Studio's JBR:
@@ -48,7 +57,7 @@
 - **Face gate behavior:** when the phone is not confirmed face-down, the service cancels Live Update 1001 and keeps FGS 1002. The 1002 text shows `Glyph on: phone is face-down`, `Glyph paused: phone is face-up` or `Waiting for charger`. The "Only when face down" switch defaults on; when off, the old charging-only behavior returns.
 - **Nothing's renderer is not a face-down guard:** in a test the `GlyphAdapter` rendered progress while `glyph_screen_upward_state=0`. The app must gate the Live Update itself.
 - `BootReceiver` starts the monitor and the watchdog on `BOOT_COMPLETED` / `MY_PACKAGE_REPLACED`; `MainActivity` starts the monitor on launch; the switch stops both. The service uses `stopWithTask="false"`.
-- If the monitor does not restart after boot or an update, set the app to **Unrestricted** with the in-app "Background access" button; the UI shows `Battery: Optimized` vs `Unrestricted`.
+- If the monitor does not restart after boot or an update, set the app to **Unrestricted** with the in-app "Background access" row; the row value shows `UNRESTRICTED` or `OPTIMIZED`.
 - `ChargingGlyphWorker.kt`, `ChargingScheduler.kt`, `BatteryState.kt` and `PowerReceiver.kt` are dead legacy files. `PowerReceiver` is not in the manifest because `ACTION_POWER_CONNECTED` is not delivered to background apps. Do not edit them expecting behaviour.
 - No `com.nothing.ketchum` GDK and no API key. The Live Update path is the production path. Adding the GDK means per-device renderers (36-zone strip, 6-zone bar, Glyph Matrix) and needs explicit approval.
 - Git repository on `main`; no remote or PR workflow. `opencode.json` lists a `DEPLOYMENT.md` that does not exist; do not assume deployment docs.
@@ -63,5 +72,5 @@
 - Unplug or charge limit: score < 0.50 -> Live Update cancelled, Glyph dark, service notification 1002 still present.
 - Switch off "Only when face down": the glyph follows charging only, and 1002 says `Glyph on: always while charging`.
 - Background: swipe the task away; a running service stays and `onTaskRemoved` logs the restart. Kill the process to test `START_STICKY`. Force the watchdog with `adb shell cmd jobscheduler run -f com.garen.glyphcharge 1004`.
-- Battery: the UI shows `Battery: Unrestricted`; `adb shell dumpsys deviceidle whitelist | grep glyphcharge` shows `user,com.garen.glyphcharge`.
-- The UI's detector snapshot has no trend history; trust the service log for the real decision.
+- Battery: the "Background access" row shows `UNRESTRICTED`; `adb shell dumpsys deviceidle whitelist | grep glyphcharge` shows `user,com.garen.glyphcharge`.
+- The `DETAILS` panel has no trend history; trust the service log for the real decision.
