@@ -57,8 +57,9 @@ Tested on Nothing Phone (3a) Pro (A059P) with Nothing OS 5.0 and Android 17.
 
 ## Install
 
-Glyph Charge is not on Google Play. Build the APK from source and install it on
-the phone.
+Glyph Charge is not on Google Play. Download the latest APK from
+[Releases](https://github.com/garenyondem/nothing-battery-charge-widget/releases/latest),
+or build it from source and install it on the phone.
 
 1. Install Android Studio with the Android 17 SDK (API 37).
 2. Open this project and let Gradle sync.

@@ -61,7 +61,7 @@
 - If the monitor does not restart after boot or an update, set the app to **Unrestricted** with the in-app "Background access" row; the row value shows `UNRESTRICTED` or `OPTIMIZED`.
 - `ChargingGlyphWorker.kt`, `ChargingScheduler.kt`, `BatteryState.kt` and `PowerReceiver.kt` are dead legacy files. `PowerReceiver` is not in the manifest because `ACTION_POWER_CONNECTED` is not delivered to background apps. Do not edit them expecting behaviour.
 - No `com.nothing.ketchum` GDK and no API key. The Live Update path is the production path. Adding the GDK means per-device renderers (36-zone strip, 6-zone bar, Glyph Matrix) and needs explicit approval.
-- Git repository on `main`; no remote or PR workflow. `opencode.json` lists a `DEPLOYMENT.md` that does not exist; do not assume deployment docs.
+- Git repository on `main`; origin is `garenyondem/nothing-battery-charge-widget`; no PR workflow. `opencode.json` lists a `DEPLOYMENT.md` that does not exist; do not assume deployment docs.
 - Root `build.log`, `hs_err_pid*.log` and `replay_pid*.log` are generated crash noise, not config.
 
 ## Verify a charge
@@ -75,3 +75,12 @@
 - Background: swipe the task away; a running service stays and `onTaskRemoved` logs the restart. Kill the process to test `START_STICKY`. Force the watchdog with `adb shell cmd jobscheduler run -f com.garen.glyphcharge 1004`.
 - Battery: the "Background access" row shows `UNRESTRICTED`; `adb shell dumpsys deviceidle whitelist | grep glyphcharge` shows `user,com.garen.glyphcharge`.
 - The `DETAILS` panel has no trend history; trust the service log for the real decision.
+
+## Release
+
+- The release workflow is `.github/workflows/release.yml`. It runs on `v*` tags and on manual dispatch with an existing tag.
+- The keystore is outside the repo at `%USERPROFILE%\.glyphcharge`. Back it up. The repo secrets are `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`.
+- `versionName` comes from the tag. `versionCode` is `major * 10000 + minor * 100 + patch`. `v0.1.0` gives 100.
+- Push a tag: `git tag v0.1.0` then `git push origin v0.1.0`. The workflow builds, verifies and attaches `GlyphCharge-0.1.0.apk` and `SHA256SUMS.txt`.
+- A local signed release build needs `KEYSTORE_PATH`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. Without them, `assembleRelease` is unsigned.
+- The first release-signed APK cannot install over a debug build. Uninstall the app first.

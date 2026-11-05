@@ -2,6 +2,16 @@ plugins {
     id("com.android.application")
 }
 
+val releaseVersionName = (project.findProperty("versionName") as String?) ?: "0.1.0"
+val releaseVersionCode = (project.findProperty("versionCode") as String?)?.toIntOrNull() ?: 1
+
+val keystorePath = System.getenv("KEYSTORE_PATH")
+val keystorePassword = System.getenv("KEYSTORE_PASSWORD")
+val releaseKeyAlias = System.getenv("KEY_ALIAS")
+val releaseKeyPassword = System.getenv("KEY_PASSWORD")
+val hasReleaseKeystore = listOf(keystorePath, keystorePassword, releaseKeyAlias, releaseKeyPassword)
+    .all { !it.isNullOrBlank() }
+
 android {
     namespace = "com.garen.glyphcharge"
     compileSdk = 37
@@ -10,8 +20,26 @@ android {
         applicationId = "com.garen.glyphcharge"
         minSdk = 36
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = releaseVersionCode
+        versionName = releaseVersionName
+    }
+
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = file(keystorePath!!)
+                storePassword = keystorePassword
+                this.keyAlias = releaseKeyAlias
+                this.keyPassword = releaseKeyPassword
+                storeType = "PKCS12"
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.findByName("release")
+        }
     }
 
     compileOptions {
