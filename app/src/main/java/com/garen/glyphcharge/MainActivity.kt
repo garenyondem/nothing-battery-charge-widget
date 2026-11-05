@@ -49,7 +49,6 @@ class MainActivity : Activity() {
     private lateinit var gauge: GlyphGaugeView
     private lateinit var levelLabel: TextView
     private lateinit var stateLabel: TextView
-    private lateinit var etaLabel: TextView
     private lateinit var liveLabel: TextView
     private lateinit var liveDot: View
     private lateinit var faceCell: StatusCell
@@ -259,12 +258,6 @@ class MainActivity : Activity() {
         }
         stateRow.addView(stateLabel)
         center.addView(stateRow)
-
-        etaLabel = NothingUi.micro(this, "").apply {
-            setPadding(0, dp(7), 0, 0)
-            letterSpacing = 0.12f
-        }
-        center.addView(etaLabel)
 
         hero.addView(center)
         return hero
@@ -504,18 +497,6 @@ class MainActivity : Activity() {
                 decision.charging -> "CHARGING"
                 signals.status == BatteryManager.BATTERY_STATUS_FULL -> "FULL"
                 else -> "NOT CHARGING"
-            }
-        )
-
-        etaLabel.setTextIfChanged(
-            when {
-                !enabled -> "MONITOR IS OFF"
-                decision.charging && signals.chargeTimeRemainingMs != null ->
-                    "${signals.chargeTimeRemainingMs / 60_000} MIN TO FULL"
-                decision.charging -> "ESTIMATING TIME"
-                signals.status == BatteryManager.BATTERY_STATUS_FULL -> "CHARGE COMPLETE"
-                signals.plugged -> "CONNECTED"
-                else -> "NOT PLUGGED IN"
             }
         )
 
