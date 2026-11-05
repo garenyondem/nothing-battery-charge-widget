@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="glyph_mark">#121214</color>
+    <color name="surface">#F5F5F5</color>
+    <color name="ink">#0A0A0A</color>
+    <color name="ink_muted">#6E6E6E</color>
+    <color name="ink_faint">#A0A0A0</color>
+    <color name="hairline">#1A000000</color>
+    <color name="switch_track_off">#24000000</color>
+    <color name="accent">#D71921</color>
 </resources>
