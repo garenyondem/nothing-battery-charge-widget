@@ -72,8 +72,7 @@ The view reports itself as `android.widget.Switch` to accessibility services.
 
 ### Section
 
-A micro label, a row count, a hairline, then rows separated by hairlines.
-The count is the Nothing habit of showing the system.
+A micro label, a hairline, then rows separated by hairlines.
 
 ### StatusCell
 

@@ -9,7 +9,6 @@ import android.view.Gravity
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
-import java.util.Locale
 
 object NothingUi {
 
@@ -84,7 +83,7 @@ object NothingUi {
         }
 }
 
-class Section(context: Context, title: String, count: Int) : LinearLayout(context) {
+class Section(context: Context, title: String) : LinearLayout(context) {
 
     init {
         orientation = VERTICAL
@@ -98,9 +97,6 @@ class Section(context: Context, title: String, count: Int) : LinearLayout(contex
                 NothingUi.micro(context, title),
                 LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             )
-            if (count > 0) {
-                addView(NothingUi.micro(context, String.format(Locale.US, "%02d", count)))
-            }
         }
 
         addView(header)

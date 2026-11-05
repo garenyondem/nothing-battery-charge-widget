@@ -313,7 +313,7 @@ class MainActivity : Activity() {
     }
 
     private fun controlsSection(): View {
-        val section = Section(this, "CONTROLS", 2)
+        val section = Section(this, "CONTROLS")
 
         meterSwitch = NothingSwitch(this).apply {
             setChecked(ChargingPreferences.isEnabled(this@MainActivity))
@@ -332,7 +332,7 @@ class MainActivity : Activity() {
     }
 
     private fun setupSection(): View {
-        val section = Section(this, "SETUP", 4)
+        val section = Section(this, "SETUP")
 
         notificationValue = NothingUi.value(this, "\u2014")
         section.addRow(
