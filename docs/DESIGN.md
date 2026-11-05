@@ -80,6 +80,13 @@ The count is the Nothing habit of showing the system.
 A micro caption, a 4 dp dot, and a value. The dot is ink when the state is true
 and faint when it is false.
 
+### Footer theme toggle
+
+The footer ends with a `DAY` or `NIGHT` text button in the micro label style.
+The label shows the current theme. A tap stores the opposite theme in `settings`
+and recreates the screen. Until the first tap the screen follows the system.
+The 48 dp hit area stays centered on the label.
+
 ## 3. States
 
 | Condition | Gauge | State label | Glyph cell |

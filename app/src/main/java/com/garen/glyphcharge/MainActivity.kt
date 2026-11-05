@@ -6,6 +6,7 @@ import android.app.Activity
 import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
@@ -72,6 +73,25 @@ class MainActivity : Activity() {
         }
     }
 
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(themedContext(newBase))
+    }
+
+    private fun themedContext(base: Context): Context {
+        val night = when (ChargingPreferences.themeMode(base)) {
+            ChargingPreferences.THEME_LIGHT -> Configuration.UI_MODE_NIGHT_NO
+            ChargingPreferences.THEME_DARK -> Configuration.UI_MODE_NIGHT_YES
+            else -> return base
+        }
+        val config = Configuration(base.resources.configuration)
+        config.uiMode = (config.uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or night
+        return base.createConfigurationContext(config)
+    }
+
+    private fun isNight(): Boolean =
+        (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ChargingNotification.ensureChannels(this)
@@ -86,11 +106,12 @@ class MainActivity : Activity() {
 
     private fun applyEdgeToEdge() {
         window.setDecorFitsSystemWindows(false)
-        val night = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-            Configuration.UI_MODE_NIGHT_YES
         val mask = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or
             WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-        window.decorView.windowInsetsController?.setSystemBarsAppearance(if (night) 0 else mask, mask)
+        window.decorView.windowInsetsController?.setSystemBarsAppearance(
+            if (isNight()) 0 else mask,
+            mask
+        )
     }
 
     private fun armMonitor() {
@@ -420,16 +441,36 @@ class MainActivity : Activity() {
     private fun footerRow(): View {
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(0, dp(26), 0, 0)
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(8), 0, 0)
         }
         row.addView(
             NothingUi.micro(this, versionName()),
             LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         )
-        val night = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-            Configuration.UI_MODE_NIGHT_YES
-        row.addView(NothingUi.micro(this, if (night) "NIGHT" else "LIGHT"))
+        val dark = isNight()
+        row.addView(
+            NothingUi.micro(this, if (dark) "NIGHT" else "DAY").apply {
+                isClickable = true
+                isFocusable = true
+                gravity = Gravity.END or Gravity.CENTER_VERTICAL
+                minimumWidth = dp(48)
+                minimumHeight = dp(48)
+                background = pressRipple()
+                contentDescription =
+                    if (dark) "Night theme. Switch to day." else "Day theme. Switch to night."
+                setOnClickListener { setDarkTheme(!dark) }
+            }
+        )
         return row
+    }
+
+    private fun setDarkTheme(dark: Boolean) {
+        ChargingPreferences.setThemeMode(
+            this,
+            if (dark) ChargingPreferences.THEME_DARK else ChargingPreferences.THEME_LIGHT
+        )
+        recreate()
     }
 
     private fun versionName(): String = runCatching {

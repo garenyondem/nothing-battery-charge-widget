@@ -15,6 +15,7 @@
 - Do not use NDot55 for interface text. The brand rules reserve it for the logotype and product names.
 - No spring or bounce. No parallax. No dependency for the motion. `ValueAnimator` and `PathInterpolator` cover it.
 - The raw detector dump sits behind the `DETAILS` row. Keep it there; do not put it back on the main screen.
+- The footer `DAY`/`NIGHT` label is a text button. It stores `theme_mode` in `settings`, forces the theme through the activity base context, and calls `recreate()`. With no stored value the app follows the system.
 
 ## Build
 
