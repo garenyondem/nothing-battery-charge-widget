@@ -61,7 +61,7 @@
 - If the monitor does not restart after boot or an update, set the app to **Unrestricted** with the in-app "Background access" row; the row value shows `UNRESTRICTED` or `OPTIMIZED`.
 - `ChargingGlyphWorker.kt`, `ChargingScheduler.kt`, `BatteryState.kt` and `PowerReceiver.kt` are dead legacy files. `PowerReceiver` is not in the manifest because `ACTION_POWER_CONNECTED` is not delivered to background apps. Do not edit them expecting behaviour.
 - No `com.nothing.ketchum` GDK and no API key. The Live Update path is the production path. Adding the GDK means per-device renderers (36-zone strip, 6-zone bar, Glyph Matrix) and needs explicit approval.
-- Git repository on `main`; origin is `garenyondem/nothing-battery-charge-widget`; no PR workflow. `opencode.json` lists a `DEPLOYMENT.md` that does not exist; do not assume deployment docs.
+- Git repository on `main`; origin is the public GitHub repository; no PR workflow. `opencode.json` lists a `DEPLOYMENT.md` that does not exist; do not assume deployment docs.
 - Root `build.log`, `hs_err_pid*.log` and `replay_pid*.log` are generated crash noise, not config.
 
 ## Verify a charge
@@ -78,9 +78,98 @@
 
 ## Release
 
-- The release workflow is `.github/workflows/release.yml`. It runs on `v*` tags and on manual dispatch with an existing tag.
-- The keystore is outside the repo at `%USERPROFILE%\.glyphcharge`. Back it up. The repo secrets are `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`.
-- `versionName` comes from the tag. `versionCode` is `major * 10000 + minor * 100 + patch`. `v0.1.0` gives 100.
-- Push a tag: `git tag v0.1.0` then `git push origin v0.1.0`. The workflow builds, verifies and attaches `GlyphCharge-0.1.0.apk` and `SHA256SUMS.txt`.
-- A local signed release build needs `KEYSTORE_PATH`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. Without them, `assembleRelease` is unsigned.
-- The first release-signed APK cannot install over a debug build. Uninstall the app first.
+### Release flow
+
+1. A maintainer pushes a tag in the form `v<major>.<minor>.<patch>`.
+2. GitHub runs `.github/workflows/release.yml` on `ubuntu-24.04` with JDK 17.
+3. The workflow decodes the release keystore from repository secrets.
+4. It runs `:app:assembleRelease` with the tag version.
+5. It checks the signature, version and debug flag.
+6. It attaches the APK and `SHA256SUMS.txt` to the GitHub Release.
+7. If the release exists, the workflow uploads the files to it. It does not create a duplicate.
+
+### Version rules
+
+- The tag sets `versionName`. `v0.1.0` gives `0.1.0`.
+- The tag sets `versionCode`. The formula is `major * 10000 + minor * 100 + patch`.
+- `v0.1.0` gives `100`. `v1.2.3` gives `10203`.
+- Keep `minor` and `patch` below 100.
+- Use a higher version for each release.
+- A pre-release tag such as `v0.2.0-rc.1` is allowed. It uses the same `versionCode` as `v0.2.0`.
+
+### Release steps
+
+1. Merge the release changes to `main`.
+2. Confirm that the local branch matches `origin/main`.
+3. Create the tag: `git tag v0.1.0`.
+4. Push the tag: `git push origin v0.1.0`.
+5. Open the `Release` workflow run in the Actions tab.
+6. Confirm that the release has `GlyphCharge-0.1.0.apk` and `SHA256SUMS.txt`.
+7. Download the APK and `SHA256SUMS.txt`.
+8. Verify the download: `sha256sum -c SHA256SUMS.txt`.
+9. Install the APK and test it on the phone.
+
+### Manual run
+
+1. Create and push the tag first. The manual input does not create a tag.
+2. Open Actions > Release > Run workflow.
+3. Enter the existing tag, for example `v0.1.0`.
+4. Start the run.
+
+### Repository secrets
+
+The workflow needs four repository secrets. Set them in Settings > Secrets and variables > Actions > Secrets.
+
+- `KEYSTORE_BASE64`: the Base64 form of the release keystore.
+- `KEYSTORE_PASSWORD`: the keystore password.
+- `KEY_ALIAS`: the key alias.
+- `KEY_PASSWORD`: the key password.
+
+To set the secrets with the GitHub CLI:
+
+1. Encode the keystore: `base64 -w 0 <path-to-keystore> > keystore.base64`.
+2. Run `gh secret set KEYSTORE_BASE64 < keystore.base64`.
+3. Run `gh secret set KEYSTORE_PASSWORD`.
+4. Run `gh secret set KEY_ALIAS`.
+5. Run `gh secret set KEY_PASSWORD`.
+6. Delete `keystore.base64`.
+
+The last three commands prompt for the value. Do not write secret values in this file, the repository, logs, issues or pull requests.
+The workflow uses `GITHUB_TOKEN` for the release. Do not create a personal access token for normal releases.
+
+### Release keystore
+
+- Keep the keystore outside the repository. The expected folder is `%USERPROFILE%\.glyphcharge`.
+- The folder holds the keystore, `keystore.properties` and a local README.
+- Never commit the keystore, `keystore.properties` or the encoded file.
+- Back up the folder offline. A lost key blocks updates for existing installs.
+- A leaked key lets another person sign updates. Rotate the key only with a new application ID or a user uninstall.
+- The keystore is PKCS12 with an RSA 4096 key. The Gradle signing config expects PKCS12.
+- To update `KEYSTORE_BASE64`, encode the keystore with `base64 -w 0` and set the secret again. Do not commit the encoded file.
+
+### Local signed build
+
+1. Set `KEYSTORE_PATH`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD` to the local values.
+2. Run `./gradlew :app:assembleRelease -PversionName=0.1.0 -PversionCode=100`.
+3. Find the APK at `app/build/outputs/apk/release/app-release.apk`.
+
+Without the four variables, `assembleRelease` is unsigned. The debug build does not need the variables.
+
+### First release install
+
+- The release key differs from the debug key.
+- Uninstall `com.garen.glyphcharge` before the first release install.
+- The uninstall clears app settings. Re-enable the monitor and background access.
+- Later releases install over earlier release builds.
+
+### Release checks
+
+- `Tag must look like v1.2.3`: use three numeric parts in the tag.
+- `KEYSTORE_BASE64 is empty or invalid`: set the secret again with a complete Base64 file.
+- The APK is unsigned or `apksigner` fails: check all four secrets. The signing config needs all four values.
+- `Keystore file not set`: check `KEYSTORE_PATH` and the keystore file.
+- `403` on release creation: check Settings > Actions > General > Workflow permissions. Allow read and write, or check the organization policy.
+- The workflow did not run: confirm the tag starts with `v` and the workflow file is on the tagged commit.
+- The release has no APK: open the failed run and re-run it. The upload step is safe to repeat.
+- The release has the wrong APK: delete the asset and re-run the workflow. Do not reuse a version code for different code.
+- To delete a bad release and its tag: `gh release delete v0.1.0 --yes --cleanup-tag`. Use this only before users install the APK.
