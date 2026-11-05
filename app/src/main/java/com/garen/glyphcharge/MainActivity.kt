@@ -501,8 +501,7 @@ class MainActivity : Activity() {
         stateLabel.setTextIfChanged(
             when {
                 !enabled -> "MONITOR OFF"
-                decision.charging && glyphOn -> "CHARGING"
-                decision.charging -> "PAUSED"
+                decision.charging -> "CHARGING"
                 signals.status == BatteryManager.BATTERY_STATUS_FULL -> "FULL"
                 else -> "NOT CHARGING"
             }

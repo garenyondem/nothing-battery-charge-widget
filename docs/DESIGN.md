@@ -86,7 +86,7 @@ and faint when it is false.
 | --- | --- | --- | --- |
 | Monitor off | Dim | MONITOR OFF | OFF |
 | Charging, face gate open | Lit, pulsing | CHARGING | ON |
-| Charging, face up | Dim | PAUSED | PAUSED |
+| Charging, face up | Dim | CHARGING | PAUSED |
 | Not charging | Dim | NOT CHARGING | OFF |
 | Battery full | Dim | FULL | OFF |
 
