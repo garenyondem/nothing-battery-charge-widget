@@ -1,0 +1,1 @@
+First release. Glyph charging meter with a face-down gate, a Live Update card, and a day and night theme.

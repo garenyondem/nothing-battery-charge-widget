@@ -1,0 +1,45 @@
+Show the battery level on the Glyph lights while a Nothing phone charges.
+
+Glyph Charge sends the charge level to the Glyph Interface as a progress
+ring while the charger is connected. By default the Glyph starts only when
+the phone lies face down and flat, so the lights stay quiet while you use
+the phone.
+
+The app also posts a Live Update card in the notification shade. Nothing OS
+turns it into Glyph progress while charging.
+
+Features
+
+• Battery level as a Glyph progress ring while charging
+• Face-down gate: the Glyph starts only when the phone lies flat and face down
+• On-screen preview: a twelve-dot ring with the level, charge state and face state
+• Day and night theme, following the system theme by default
+• No internet permission. No account, no ads, no tracking
+
+How it works
+
+1. Detect the charger. The app combines the charger state, the current and
+the charge trend. The meter starts when the signals agree.
+2. Confirm the position. The app reads the screen-upward sensor and samples
+gravity for two seconds. The phone must lie flat and still.
+3. Send the level. The app posts a Live Update with the battery level. The
+update stops when charging stops or you pick the phone up.
+
+Requirements
+
+• A Nothing phone with a Glyph Interface, Nothing OS 4.1 or later
+• Notification permission
+• Glyph Progress enabled in the Nothing Glyph app (on by default)
+• Background access set to Unrestricted for reliable restarts (recommended)
+
+Good to know
+
+• The app keeps a small service notification while the meter runs. Android
+needs this notification to keep the meter alive. You can swipe it away.
+• A force stop cancels the meter until you open the app again.
+• On other Android 16 phones the app installs, but only Nothing phones have
+a Glyph Interface.
+
+Glyph Charge is an independent hobby project. Nothing Technology Limited
+does not endorse it. Nothing and Glyph are trademarks of Nothing Technology
+Limited.
