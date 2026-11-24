@@ -100,14 +100,15 @@
 ### Release steps
 
 1. Merge the release changes to `main`.
-2. Confirm that the local branch matches `origin/main`.
-3. Create the tag: `git tag v0.1.0`.
-4. Push the tag: `git push origin v0.1.0`.
-5. Open the `Release` workflow run in the Actions tab.
-6. Confirm that the release has `GlyphCharge-0.1.0.apk` and `SHA256SUMS.txt`.
-7. Download the APK and `SHA256SUMS.txt`.
-8. Verify the download: `sha256sum -c SHA256SUMS.txt`.
-9. Install the APK and test it on the phone.
+2. Set the version defaults in `app/build.gradle.kts` to the release values, for example `0.1.0` and `100`. Commit this change. A tagged commit must build its own version without `-P` flags; F-Droid builds tags that way.
+3. Confirm that the local branch matches `origin/main`.
+4. Create the tag: `git tag v0.1.0`.
+5. Push the tag: `git push origin v0.1.0`.
+6. Open the `Release` workflow run in the Actions tab.
+7. Confirm that the release has `GlyphCharge-0.1.0.apk` and `SHA256SUMS.txt`.
+8. Download the APK and `SHA256SUMS.txt`.
+9. Verify the download: `sha256sum -c SHA256SUMS.txt`.
+10. Install the APK and test it on the phone.
 
 ### Manual run
 
@@ -173,3 +174,13 @@ Without the four variables, `assembleRelease` is unsigned. The debug build does 
 - The release has no APK: open the failed run and re-run it. The upload step is safe to repeat.
 - The release has the wrong APK: delete the asset and re-run the workflow. Do not reuse a version code for different code.
 - To delete a bad release and its tag: `gh release delete v0.1.0 --yes --cleanup-tag`. Use this only before users install the APK.
+
+## F-Droid
+
+- The distribution plan is the **f-droid.org main repository**. F-Droid builds each tag from source, signs the APK with its own key, and publishes it in its default repository. GitHub releases stay the primary channel; F-Droid is a second front, not a replacement.
+- **The signatures differ.** An F-Droid install cannot update over a GitHub APK install, in either direction. Users who switch fronts must uninstall and reinstall, which clears app settings. We accept this split; do not try to build a migration.
+- `fastlane/metadata/android/en-US/` holds the upstream metadata F-Droid reads automatically: `short_description.txt` (max 80 characters, no trailing dot), `full_description.txt`, `title.txt`, `images/icon.png` (512 px), `images/phoneScreenshots/`, and `changelogs/<versionCode>.txt`. Update these with each release.
+- A tagged commit must build its own `versionName` and `versionCode` with a plain `assembleRelease` and no `-P` flags. That is why step 2 of the release steps commits the version defaults. Without the four keystore env vars the release build is unsigned, which is exactly what F-Droid builds and signs.
+- Submission is a merge request to the `fdroiddata` repository on GitLab: fork, branch `com.garen.glyphcharge`, add `metadata/com.garen.glyphcharge.yml` (MIT license, GitHub `SourceCode` and `IssueTracker`, one `Builds` entry with plain Gradle, `UpdateCheckMode: Tags`, `AutoUpdateMode: Version`, `Ignore` for `-rc` tags). The fork's CI lints the file. After the merge the app appears within 24 to 48 hours, and future tags flow in through F-Droid's update automation.
+- Review answers to have ready: `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` exists so the watchdog can restart the face-down charging meter from the background; the user triggers it from the in-app Background access row. The `specialUse` foreground service samples battery signals and posts the Live Update; it is the documented core of the app. `minSdk 36` matches Nothing OS, the only phones with a Glyph Interface.
+- IzzyOnDroid stays a zero-effort fallback: it serves the existing signed GitHub release APKs as-is. Use it only if f-droid.org inclusion stalls.

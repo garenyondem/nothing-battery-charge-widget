@@ -3,7 +3,7 @@ plugins {
 }
 
 val releaseVersionName = (project.findProperty("versionName") as String?) ?: "0.1.0"
-val releaseVersionCode = (project.findProperty("versionCode") as String?)?.toIntOrNull() ?: 1
+val releaseVersionCode = (project.findProperty("versionCode") as String?)?.toIntOrNull() ?: 100
 
 val keystorePath = System.getenv("KEYSTORE_PATH")
 val keystorePassword = System.getenv("KEYSTORE_PASSWORD")
