@@ -3,10 +3,11 @@
 # as metadata/com.garen.glyphcharge.yml on a branch named
 # com.garen.glyphcharge, then open the merge request.
 #
-# The first Builds entry targets the next tag after v0.1.0. The v0.1.0
-# commit does not carry its own versionCode (the plain Gradle build
-# produces 1, not 100), so F-Droid cannot build it. Update the version
-# fields to the actual tag when it exists, and keep the commit
+# The model follows com.gymmane.app: F-Droid downloads our signed APK
+# from the GitHub release (binary:), verifies it against the pinned
+# certificate fingerprint (AllowedAPKSigningKeys), and publishes it.
+# The gradle recipe stays as the fallback source build, so update the
+# version fields to the actual tag when it exists and keep the commit
 # self-versioned as described in AGENTS.md.
 
 Categories:
@@ -67,10 +68,13 @@ Description: |-
 RepoType: git
 Repo: https://github.com/garenyondem/nothing-battery-charge-widget
 
+AllowedAPKSigningKeys: a2ad5f9f15f0e0fee08caab7a86d7db210fec0e2a22c420dfa6b752570170bdf
+
 Builds:
   - versionName: 0.1.1
     versionCode: 101
     commit: v0.1.1
+    binary: https://github.com/garenyondem/nothing-battery-charge-widget/releases/download/v%v/GlyphCharge-%v.apk
     gradle:
       - yes
 
