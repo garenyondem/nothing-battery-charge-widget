@@ -12,6 +12,12 @@
     <img alt="Version 0.1.0" src="https://img.shields.io/badge/Version-0.1.0-000000?style=flat-square">
     <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-000000?style=flat-square">
   </p>
+
+  <p>
+    <a href="https://github.com/garenyondem/nothing-battery-charge-widget/releases/latest">
+      <img alt="Get it on GitHub" src="docs/badges/get-it-on-github.png" height="60">
+    </a>
+  </p>
 </div>
 
 Glyph Charge shows the battery level on the Nothing Glyph Interface while the
