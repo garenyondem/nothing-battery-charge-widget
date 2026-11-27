@@ -50,8 +50,9 @@ object ChargingPreferences {
         prefs(context).edit().putLong(KEY_HEARTBEAT, value).apply()
     }
 
-    fun setLastDecision(context: Context, charging: Boolean, percent: Int) {
+    fun setHeartbeatAndDecision(context: Context, charging: Boolean, percent: Int) {
         prefs(context).edit()
+            .putLong(KEY_HEARTBEAT, System.currentTimeMillis())
             .putBoolean(KEY_LAST_CHARGING, charging)
             .putInt(KEY_LAST_PERCENT, percent)
             .apply()

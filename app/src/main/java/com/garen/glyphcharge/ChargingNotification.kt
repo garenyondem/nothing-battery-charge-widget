@@ -44,7 +44,6 @@ object ChargingNotification {
     }
 
     fun buildLiveUpdate(context: Context, percent: Int): Notification {
-        ensureChannels(context)
         val value = percent.coerceIn(0, 100)
         val style = Notification.ProgressStyle().setProgress(value)
         val contentIntent = PendingIntent.getActivity(
@@ -76,7 +75,6 @@ object ChargingNotification {
         context: Context,
         status: String = "Watching the charger"
     ): Notification {
-        ensureChannels(context)
         val dismissIntent = PendingIntent.getBroadcast(
             context,
             1,

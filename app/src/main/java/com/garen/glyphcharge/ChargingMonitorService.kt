@@ -54,7 +54,7 @@ class ChargingMonitorService : Service() {
 
     private val batteryReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == Intent.ACTION_BATTERY_CHANGED) sample()
+            if (intent?.action == Intent.ACTION_BATTERY_CHANGED) sample(intent)
         }
     }
 
@@ -110,8 +110,8 @@ class ChargingMonitorService : Service() {
         return START_STICKY
     }
 
-    private fun sample() {
-        val raw = ChargingSignals.read(this)
+    private fun sample(batteryIntent: Intent? = null) {
+        val raw = ChargingSignals.read(this, batteryIntent)
         val now = SystemClock.elapsedRealtime()
 
         if (lastSampleTime == 0L) {
@@ -134,8 +134,7 @@ class ChargingMonitorService : Service() {
         val decision = ChargingDetector.evaluate(signals)
         Log.i(TAG, "signals=$signals decision=$decision")
 
-        ChargingPreferences.setHeartbeat(this)
-        ChargingPreferences.setLastDecision(this, decision.charging, raw.level)
+        ChargingPreferences.setHeartbeatAndDecision(this, decision.charging, raw.level)
 
         lastCharging = decision.charging
         lastLevel = raw.level

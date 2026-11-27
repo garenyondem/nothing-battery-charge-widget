@@ -51,6 +51,11 @@ class GlyphGaugeView(context: Context) : View(context) {
     private var pulsing = false
     private var glowRadius = 0f
     private var glowInk = 0
+    private var dotRadius = 0f
+    private var ringRadius = 0f
+    private var ringStrokeRadius = 0f
+    private var dotOffsetsX = FloatArray(0)
+    private var dotOffsetsY = FloatArray(0)
 
     private val energyAnimator = ValueAnimator().apply {
         duration = GlyphTokens.DURATION_STATE
@@ -98,7 +103,21 @@ class GlyphGaugeView(context: Context) : View(context) {
         super.onSizeChanged(width, height, oldWidth, oldHeight)
         val size = min(width, height).toFloat()
         if (size <= 0f) return
-        glowRadius = size * 0.029f * 3.2f
+
+        // The dot layout only depends on the view size, so compute it once
+        // instead of running twelve trig calls on every draw frame.
+        dotRadius = size * 0.029f
+        ringRadius = size / 2f - dotRadius * 2.5f
+        glowRadius = dotRadius * 3.2f
+        ringStrokeRadius = ringRadius + dotRadius * 1.9f
+        dotOffsetsX = FloatArray(DOT_COUNT)
+        dotOffsetsY = FloatArray(DOT_COUNT)
+        for (index in 0 until DOT_COUNT) {
+            val angle = Math.toRadians(-90.0 + index * 30.0)
+            dotOffsetsX[index] = (ringRadius * cos(angle)).toFloat()
+            dotOffsetsY[index] = (ringRadius * sin(angle)).toFloat()
+        }
+
         if (!revealed) {
             revealed = true
             revealAnimator.start()
@@ -135,7 +154,7 @@ class GlyphGaugeView(context: Context) : View(context) {
 
     override fun onDraw(canvas: Canvas) {
         val size = min(width, height).toFloat()
-        if (size <= 0f) return
+        if (size <= 0f || dotOffsetsX.isEmpty()) return
 
         if (glowRadius > 0f && (glowInk != ink || glowPaint.shader == null)) {
             glowInk = ink
@@ -151,21 +170,18 @@ class GlyphGaugeView(context: Context) : View(context) {
 
         val centerX = width / 2f
         val centerY = height / 2f
-        val dotRadius = size * 0.029f
-        val ringRadius = size / 2f - dotRadius * 2.5f
 
         ringPaint.color = ink
         ringPaint.alpha = (RING_ALPHA * energy * 255f).toInt()
-        canvas.drawCircle(centerX, centerY, ringRadius + dotRadius * 1.9f, ringPaint)
+        canvas.drawCircle(centerX, centerY, ringStrokeRadius, ringPaint)
 
         val filled = progress / 100f * DOT_COUNT
         val leading = (ceil(filled.toDouble()).toInt() - 1).coerceIn(0, DOT_COUNT - 1)
         val pulse = 0.5f + 0.5f * sin(pulsePhase * TWO_PI).toFloat()
 
         for (index in 0 until DOT_COUNT) {
-            val angle = Math.toRadians(-90.0 + index * 30.0)
-            val x = centerX + ringRadius * cos(angle).toFloat()
-            val y = centerY + ringRadius * sin(angle).toFloat()
+            val x = centerX + dotOffsetsX[index]
+            val y = centerY + dotOffsetsY[index]
 
             val shown = (reveal * (DOT_COUNT + 1) - index).coerceIn(0f, 1f)
             if (shown <= 0f) continue

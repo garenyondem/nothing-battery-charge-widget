@@ -59,6 +59,8 @@ object NothingUi {
     }
 
     fun tintDot(dot: View, color: Int) {
+        val current = dot.backgroundTintList
+        if (current != null && !current.isStateful && current.defaultColor == color) return
         dot.backgroundTintList = ColorStateList.valueOf(color)
     }
 

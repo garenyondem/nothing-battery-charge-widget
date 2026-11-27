@@ -5,9 +5,11 @@ import android.animation.ValueAnimator
 import android.app.Activity
 import android.app.NotificationManager
 import android.content.ActivityNotFoundException
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.content.res.Configuration
@@ -62,12 +64,23 @@ class MainActivity : Activity() {
 
     private var shownLevel = -1
     private var levelAnimator: ValueAnimator? = null
+    private var batteryUnrestricted = false
+    private var notificationsGranted = false
+    private var canPostPromoted = false
 
     private val uiHandler = Handler(Looper.getMainLooper())
     private val uiRunnable = object : Runnable {
         override fun run() {
-            updateStatus()
+            // Only the heartbeat age changes per second, and only the details
+            // panel shows it. Battery changes arrive through the receiver.
+            if (detailsBody.visibility == View.VISIBLE) updateStatus()
             uiHandler.postDelayed(this, 1000L)
+        }
+    }
+
+    private val batteryReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_BATTERY_CHANGED) updateStatus(intent)
         }
     }
 
@@ -125,15 +138,36 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        updateStatus()
+        refreshCachedFlags()
+        val sticky = registerReceiver(
+            batteryReceiver,
+            IntentFilter(Intent.ACTION_BATTERY_CHANGED),
+            Context.RECEIVER_EXPORTED
+        )
+        updateStatus(sticky)
         uiHandler.post(uiRunnable)
     }
 
     override fun onPause() {
         super.onPause()
         uiHandler.removeCallbacks(uiRunnable)
+        runCatching { unregisterReceiver(batteryReceiver) }
         levelAnimator?.cancel()
         shownLevel = -1
+    }
+
+    /**
+     * Flags that only change while the user acts in system settings, which
+     * always pauses this activity. Reading them per tick was three binder
+     * round-trips a second.
+     */
+    private fun refreshCachedFlags() {
+        batteryUnrestricted = getSystemService(PowerManager::class.java)
+            .isIgnoringBatteryOptimizations(packageName)
+        notificationsGranted = checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        canPostPromoted = getSystemService(NotificationManager::class.java)
+            .canPostPromotedNotifications()
     }
 
     // ---------------------------------------------------------------- layout
@@ -422,6 +456,9 @@ class MainActivity : Activity() {
                 .rotation(if (show) 180f else 0f)
                 .setDuration(GlyphTokens.DURATION_STATE)
                 .start()
+            // The details text is only built while the panel is visible, so
+            // populate it now instead of waiting for the next battery event.
+            if (show) updateStatus()
         }
 
         wrap.addView(NothingUi.divider(this))
@@ -504,8 +541,8 @@ class MainActivity : Activity() {
         updateStatus()
     }
 
-    private fun updateStatus() {
-        val signals = ChargingSignals.read(this)
+    private fun updateStatus(batteryIntent: Intent? = null) {
+        val signals = ChargingSignals.read(this, batteryIntent)
         val decision = ChargingDetector.evaluate(signals)
         val enabled = ChargingPreferences.isEnabled(this)
         val onlyFaceDown = ChargingPreferences.isOnlyFaceDown(this)
@@ -564,33 +601,38 @@ class MainActivity : Activity() {
         faceSwitch.setChecked(onlyFaceDown)
         faceSwitch.isEnabled = enabled
 
-        val power = getSystemService(PowerManager::class.java)
-        backgroundValue.text =
-            if (power.isIgnoringBatteryOptimizations(packageName)) "UNRESTRICTED" else "OPTIMIZED"
+        backgroundValue.assignIfChanged(
+            if (batteryUnrestricted) "UNRESTRICTED" else "OPTIMIZED"
+        )
 
-        val notifications = checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
-        notificationValue.text = if (notifications) "ON" else "OFF"
+        notificationValue.assignIfChanged(if (notificationsGranted) "ON" else "OFF")
         notificationValue.setTextColor(
-            if (notifications) GlyphTokens.inkMuted(this) else GlyphTokens.accent(this)
+            if (notificationsGranted) GlyphTokens.inkMuted(this) else GlyphTokens.accent(this)
         )
 
-        detailsBody.text = buildDetails(
-            signals = signals,
-            decision = decision,
-            enabled = enabled,
-            live = live,
-            heartbeatAge = heartbeatAge,
-            faceRaw = faceRaw,
-            faceConfirmed = faceConfirmed,
-            faceSource = faceSource,
-            onlyFaceDown = onlyFaceDown,
-            unrestricted = power.isIgnoringBatteryOptimizations(packageName),
-            notifications = notifications,
-            canPost = getSystemService(NotificationManager::class.java).canPostPromotedNotifications()
-        )
+        if (detailsBody.visibility == View.VISIBLE) {
+            detailsBody.assignIfChanged(
+                buildDetails(
+                    signals = signals,
+                    decision = decision,
+                    enabled = enabled,
+                    live = live,
+                    heartbeatAge = heartbeatAge,
+                    faceRaw = faceRaw,
+                    faceConfirmed = faceConfirmed,
+                    faceSource = faceSource,
+                    onlyFaceDown = onlyFaceDown,
+                    unrestricted = batteryUnrestricted,
+                    notifications = notificationsGranted,
+                    canPost = canPostPromoted
+                )
+            )
+        }
 
-        gauge.contentDescription = "Battery ${signals.level} percent"
+        val levelDescription = "Battery ${signals.level} percent"
+        if (gauge.contentDescription?.toString() != levelDescription) {
+            gauge.contentDescription = levelDescription
+        }
     }
 
     private fun showLevel(level: Int) {
@@ -666,6 +708,11 @@ class MainActivity : Activity() {
             .setDuration(GlyphTokens.DURATION_STATE)
             .setInterpolator(GlyphTokens.easeOut)
             .start()
+    }
+
+    private fun TextView.assignIfChanged(value: String) {
+        if (text?.toString() == value) return
+        text = value
     }
 
     // ---------------------------------------------------------------- actions

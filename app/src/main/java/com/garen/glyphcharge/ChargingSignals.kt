@@ -17,9 +17,14 @@ data class ChargingSignals(
     val levelTrendUp: Boolean? = null
 ) {
     companion object {
-        fun read(context: Context): ChargingSignals {
+        /**
+         * Reads the battery signals. Pass the already-delivered
+         * ACTION_BATTERY_CHANGED broadcast when the caller has one; it carries
+         * the same extras as the sticky intent, without a binder round-trip.
+         */
+        fun read(context: Context, batteryIntent: Intent? = null): ChargingSignals {
             val manager = context.getSystemService(BatteryManager::class.java)
-            val intent = context.registerReceiver(
+            val intent = batteryIntent ?: context.registerReceiver(
                 null,
                 IntentFilter(Intent.ACTION_BATTERY_CHANGED)
             )
