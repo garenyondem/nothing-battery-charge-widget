@@ -15,6 +15,7 @@
 - Do not use NDot55 for interface text. The brand rules reserve it for the logotype and product names.
 - No spring or bounce. No parallax. No dependency for the motion. `ValueAnimator` and `PathInterpolator` cover it.
 - The raw detector dump sits behind the `DETAILS` row. Keep it there; do not put it back on the main screen.
+- `MainActivity` renders the FACE/GLYPH cells from preferences on a 1 s tick while resumed. The service writes face and charging state there without any broadcast, so no battery event announces a face flip. The tick compares a prefs-only `MonitorKey` and re-renders only on a change; no binder calls while idle. While the monitor is live (heartbeat < 60 s), the cells show the service's persisted decision (`last_charging`), not a local detector evaluation; the local evaluation is only the fallback when the monitor is off or dead. The DETAILS panel adds `svc charging`/`svc idle` next to the local detector dump.
 - The footer `DAY`/`NIGHT` label is a text button. It stores `theme_mode` in `settings`, forces the theme through the activity base context, and calls `recreate()`. With no stored value the app follows the system.
 
 ## Build

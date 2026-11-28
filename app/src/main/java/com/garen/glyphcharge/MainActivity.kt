@@ -67,13 +67,35 @@ class MainActivity : Activity() {
     private var batteryUnrestricted = false
     private var notificationsGranted = false
     private var canPostPromoted = false
+    private var lastMonitorKey: MonitorKey? = null
+
+    /**
+     * The monitor-derived inputs the status strip renders. The service writes
+     * them to preferences without any broadcast, so the tick compares keys to
+     * notice a change. The heartbeat age is deliberately left out: it would
+     * make every second a new key.
+     */
+    private data class MonitorKey(
+        val enabled: Boolean,
+        val onlyFaceDown: Boolean,
+        val live: Boolean,
+        val serviceCharging: Boolean?,
+        val faceRaw: Int,
+        val faceConfirmed: Boolean
+    )
 
     private val uiHandler = Handler(Looper.getMainLooper())
     private val uiRunnable = object : Runnable {
         override fun run() {
-            // Only the heartbeat age changes per second, and only the details
-            // panel shows it. Battery changes arrive through the receiver.
-            if (detailsBody.visibility == View.VISIBLE) updateStatus()
+            // The heartbeat age changes every second, but only the details
+            // panel shows it, so it re-renders per tick. Face and charging
+            // state has no broadcast: the service writes it straight to
+            // preferences, so compare keys and re-render only on a change.
+            if (detailsBody.visibility == View.VISIBLE) {
+                updateStatus()
+            } else if (monitorKey() != lastMonitorKey) {
+                updateStatus()
+            }
             uiHandler.postDelayed(this, 1000L)
         }
     }
@@ -541,30 +563,52 @@ class MainActivity : Activity() {
         updateStatus()
     }
 
-    private fun updateStatus(batteryIntent: Intent? = null) {
-        val signals = ChargingSignals.read(this, batteryIntent)
-        val decision = ChargingDetector.evaluate(signals)
+    /**
+     * Reads the monitor state from preferences only: no binder calls, safe on
+     * every tick. While the monitor is live the service decision is the
+     * charging truth, because it is what actually drives the glyph.
+     */
+    private fun monitorKey(): MonitorKey {
         val enabled = ChargingPreferences.isEnabled(this)
-        val onlyFaceDown = ChargingPreferences.isOnlyFaceDown(this)
-        val faceRaw = ChargingPreferences.faceRaw(this)
-        val faceConfirmed = ChargingPreferences.faceConfirmed(this)
-        val faceSource = ChargingPreferences.faceSource(this) ?: "unknown"
+        val live = enabled && heartbeatAgeSeconds() in 0..60
+        return MonitorKey(
+            enabled = enabled,
+            onlyFaceDown = ChargingPreferences.isOnlyFaceDown(this),
+            live = live,
+            serviceCharging = if (live) ChargingPreferences.lastCharging(this) else null,
+            faceRaw = ChargingPreferences.faceRaw(this),
+            faceConfirmed = ChargingPreferences.faceConfirmed(this)
+        )
+    }
+
+    private fun heartbeatAgeSeconds(): Long {
         val heartbeat = ChargingPreferences.heartbeat(this)
-        val heartbeatAge = if (heartbeat > 0) {
+        return if (heartbeat > 0) {
             ((System.currentTimeMillis() - heartbeat) / 1000).coerceAtLeast(0)
         } else {
             -1
         }
-        val live = enabled && heartbeatAge in 0..60
-        val glyphOn = enabled && decision.charging && (!onlyFaceDown || faceConfirmed)
+    }
+
+    private fun updateStatus(batteryIntent: Intent? = null) {
+        val signals = ChargingSignals.read(this, batteryIntent)
+        val localDecision = ChargingDetector.evaluate(signals)
+        val key = monitorKey()
+
+        // While the monitor is live, the persisted service decision is what
+        // the glyph actually shows; the local evaluation is the fallback for a
+        // monitor that is off or dead, so the strip never disagrees with the
+        // glyph over trend-sensitive readings.
+        val charging = key.serviceCharging ?: localDecision.charging
+        val glyphOn = key.enabled && charging && (!key.onlyFaceDown || key.faceConfirmed)
 
         showLevel(signals.level)
         gauge.active = glyphOn
 
         stateLabel.setTextIfChanged(
             when {
-                !enabled -> "MONITOR OFF"
-                decision.charging -> "CHARGING"
+                !key.enabled -> "MONITOR OFF"
+                charging -> "CHARGING"
                 signals.status == BatteryManager.BATTERY_STATUS_FULL -> "FULL"
                 else -> "NOT CHARGING"
             }
@@ -572,23 +616,23 @@ class MainActivity : Activity() {
 
         faceCell.value.setTextIfChanged(
             when {
-                faceRaw == FaceDownGate.FACE_DOWN && faceConfirmed -> "DOWN · FLAT"
-                faceRaw == FaceDownGate.FACE_DOWN -> "CHECKING"
-                faceRaw == FaceDownGate.FACE_UP -> "UP"
-                faceRaw == FaceDownGate.FACE_OTHER -> "OTHER"
+                key.faceRaw == FaceDownGate.FACE_DOWN && key.faceConfirmed -> "DOWN · FLAT"
+                key.faceRaw == FaceDownGate.FACE_DOWN -> "CHECKING"
+                key.faceRaw == FaceDownGate.FACE_UP -> "UP"
+                key.faceRaw == FaceDownGate.FACE_OTHER -> "OTHER"
                 else -> "UNKNOWN"
             }
         )
         NothingUi.tintDot(
             faceCell.dot,
-            if (faceConfirmed) GlyphTokens.ink(this) else GlyphTokens.inkFaint(this)
+            if (key.faceConfirmed) GlyphTokens.ink(this) else GlyphTokens.inkFaint(this)
         )
 
         glyphCell.value.setTextIfChanged(
             when {
-                !enabled -> "OFF"
+                !key.enabled -> "OFF"
                 glyphOn -> "ON"
-                decision.charging -> "PAUSED"
+                charging -> "PAUSED"
                 else -> "OFF"
             }
         )
@@ -597,9 +641,9 @@ class MainActivity : Activity() {
             if (glyphOn) GlyphTokens.ink(this) else GlyphTokens.inkFaint(this)
         )
 
-        meterSwitch.setChecked(enabled)
-        faceSwitch.setChecked(onlyFaceDown)
-        faceSwitch.isEnabled = enabled
+        meterSwitch.setChecked(key.enabled)
+        faceSwitch.setChecked(key.onlyFaceDown)
+        faceSwitch.isEnabled = key.enabled
 
         backgroundValue.assignIfChanged(
             if (batteryUnrestricted) "UNRESTRICTED" else "OPTIMIZED"
@@ -614,20 +658,23 @@ class MainActivity : Activity() {
             detailsBody.assignIfChanged(
                 buildDetails(
                     signals = signals,
-                    decision = decision,
-                    enabled = enabled,
-                    live = live,
-                    heartbeatAge = heartbeatAge,
-                    faceRaw = faceRaw,
-                    faceConfirmed = faceConfirmed,
-                    faceSource = faceSource,
-                    onlyFaceDown = onlyFaceDown,
+                    decision = localDecision,
+                    serviceCharging = key.serviceCharging,
+                    enabled = key.enabled,
+                    live = key.live,
+                    heartbeatAge = heartbeatAgeSeconds(),
+                    faceRaw = key.faceRaw,
+                    faceConfirmed = key.faceConfirmed,
+                    faceSource = ChargingPreferences.faceSource(this) ?: "unknown",
+                    onlyFaceDown = key.onlyFaceDown,
                     unrestricted = batteryUnrestricted,
                     notifications = notificationsGranted,
                     canPost = canPostPromoted
                 )
             )
         }
+
+        lastMonitorKey = key
 
         val levelDescription = "Battery ${signals.level} percent"
         if (gauge.contentDescription?.toString() != levelDescription) {
@@ -654,6 +701,7 @@ class MainActivity : Activity() {
     private fun buildDetails(
         signals: ChargingSignals,
         decision: ChargingDecision,
+        serviceCharging: Boolean?,
         enabled: Boolean,
         live: Boolean,
         heartbeatAge: Long,
@@ -691,6 +739,11 @@ class MainActivity : Activity() {
             append("\nMonitor ${if (enabled) "on" else "off"} · heartbeat ")
             append(if (heartbeatAge >= 0) "${heartbeatAge}s" else "none")
             append(if (live) " · live" else " · stale")
+            when (serviceCharging) {
+                true -> append(" · svc charging")
+                false -> append(" · svc idle")
+                null -> Unit
+            }
             append("\nFace $face · gate ${if (onlyFaceDown) "on" else "off"} · $faceSource")
             append("\nBattery ${if (unrestricted) "unrestricted" else "optimized"}")
             append(" · notifications ${if (notifications) "on" else "off"}")
