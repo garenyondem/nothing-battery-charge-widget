@@ -14,7 +14,8 @@ import kotlin.math.abs
 import kotlin.math.sqrt
 
 /**
- * Watches the Nothing screen_upward sensor and confirms a flat face-down position.
+ * Watches the Nothing screen_upward sensor and confirms a face-down position
+ * within a tilt tolerance (see the constants below).
  *
  * The screen_upward sensor is a wake-up on-change sensor. Its values are:
  * 1 = screen up, 2 = screen down, 0 = other.
@@ -43,6 +44,14 @@ class FaceDownGate(
         private const val RETRY_MS = 3_000L
         private const val MAX_RETRIES = 3
         private const val WAKELOCK_TIMEOUT_MS = 5_000L
+
+        // Tilt tolerance: accept face-down positions up to 30 degrees from perfectly
+        // flat, so uneven desks and the camera bump do not block the glyph.
+        // z = -9.81 * cos(30) = -8.50, horizontal = 9.81 * sin(30) = 4.91.
+        private const val NORM_TOLERANCE = 1.2f
+        private const val MIN_FACE_DOWN_Z = -8.5f
+        private const val MAX_FACE_DOWN_HORIZONTAL = 4.9f
+        private const val MAX_DEVIATION = 1.2f
     }
 
     private val sensorManager = context.getSystemService(SensorManager::class.java)
@@ -204,7 +213,7 @@ class FaceDownGate(
         }
 
         handler.postDelayed(confirmRunnable, CONFIRM_MS)
-        Log.i(TAG, "confirming flat face-down, attempt=${retries + 1}")
+        Log.i(TAG, "confirming face-down, attempt=${retries + 1}")
     }
 
     private fun finishConfirmation() {
@@ -250,9 +259,9 @@ class FaceDownGate(
         val mz = sz / n
         val norm = sqrt(mx * mx + my * my + mz * mz)
 
-        if (abs(norm - 9.81f) > 1.2f) return false
-        if (mz > -9.0f) return false
-        if (sqrt(mx * mx + my * my) > 2.0f) return false
+        if (abs(norm - 9.81f) > NORM_TOLERANCE) return false
+        if (mz > MIN_FACE_DOWN_Z) return false
+        if (sqrt(mx * mx + my * my) > MAX_FACE_DOWN_HORIZONTAL) return false
 
         var maxDeviation = 0f
         for (v in data) {
@@ -262,7 +271,7 @@ class FaceDownGate(
             val deviation = sqrt(dx * dx + dy * dy + dz * dz)
             if (deviation > maxDeviation) maxDeviation = deviation
         }
-        return maxDeviation < 0.8f
+        return maxDeviation < MAX_DEVIATION
     }
 
     private fun setConfirmed(value: Boolean) {

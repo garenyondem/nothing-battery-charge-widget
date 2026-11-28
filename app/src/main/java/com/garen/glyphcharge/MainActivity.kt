@@ -674,7 +674,7 @@ class MainActivity : Activity() {
             null -> "n/a"
         }
         val face = when {
-            faceRaw == FaceDownGate.FACE_DOWN && faceConfirmed -> "down, flat"
+            faceRaw == FaceDownGate.FACE_DOWN && faceConfirmed -> "down, confirmed"
             faceRaw == FaceDownGate.FACE_DOWN -> "down, checking"
             faceRaw == FaceDownGate.FACE_UP -> "up"
             faceRaw == FaceDownGate.FACE_OTHER -> "other"
